@@ -1,11 +1,18 @@
 # bioCanon
 
-Biohansel requires a strain-specific fasta format scheme to be able to classify samples.
-Schemes exist for some common clonal pathogens, but there are many untapped applications.
+bioCanon is a tool for developing canonical SNP based genotyping schemes.  bioCanon schemes 
+are designed to be compatible with Biohansel.  Schemes exist for some common clonal 
+pathogens, but there are many untapped applications.
+
 This module includes functions to aid in the generation of k-mers linked to predefined groups
 to serve as the basis for automatic scheme development.  The only test of k-mer quality is the
 exclusion of k-mers with degenerate bases.  Further filtering of output kmers will be required
 to improve the quality of the biohansel scheme.
+
+## Alpha Version Disclaimer
+
+bioCanon is currently undergoing active development and testing.  No guarantees of accuracy or 
+correctness are provided.  Feedback is welcomed.
 
 ## Getting Started
 
@@ -188,18 +195,52 @@ Three files will be produced by a successful run of the bioCanon module:
 
 There are three tool/accessory scripts included with bioCanon: filter_vcf.py, scheme_qa_tool.py, and biohansel_to_tsv.py.
 
-#### scheme_qa_tool.py
+#### Scheme QA Tool
 
 The scheme_qa_tool.py script takes a bioCannon scheme and a directory containg either .fastq or .fasta files.  It runs biohansel on the sequence data using the provided scheme to type the sequences.  Poorly performing tiles are identified and outputted to a .csv file which can be used as input to filter_vcf.py. 
 
-##### Inputs
+##### Arguments
+
+###### --in_scheme
+* Required
+
+Expects the name and path of a scheme file in the biohansel format.  bioCanon produces schemes in this format by default.
+
+###### --in_seq_data
+* Required
+
+Expects a directory where the sequence or sequences of interest are stored.
+
+###### --outdir
+* Required
+
+Expects an output directory.  Will overwrite existing files if the directory already exists.
+
+###### --biohansel_arguments
+* Optional
+
+Expects a quoted string of biohansel arguments('--arg1 value1 --arg2 value2').
+
+###### --filter_out_below
+* Optional
+
+Filter out tiles which fall below the specified ratio of occurrences of the tile/expected occurrences.  Each tile is expecte to occur once per sample.  Expects a floating point value.
+
+###### --filter_out_above
+* Optional
+
+Filter out tiles which exceed the specified ratio.  Expects a floating point value.
 
 ##### Outputs
 
-k-mer_report.csv - A target/tile based summary report.
-filtered_tiles.csv - A .csv containing tiles filtered out based on user settings.
+bioqa_kmer.tsv - A target/tile based summary report.
+bioqa_filtered.tsv - A .tsv containing tiles filtered out based on user settings.
 
 ##### Examples
+
+```
+python3 ./bioCanon/scheme_qa_tool.py --in_scheme ./out/sample.fasta --in_seq_data ./bioqa_test/fastq_data_directory/  --outdir output_directory/ 
+```
 
 #### biohansel_to_tsv.py
 
@@ -222,9 +263,15 @@ The current testing suite tests functions in main by supplying them with test da
 
 ## Authors
 
-* **Amanda Saunders** - *Initial work* - [Almene](https://github.com/almene)
+* **James Robertson** - Prototype Code
+* **Amanda Saunders** - Code Optimization, Documentation, Tools
+* **Justin Schonfeld** - Code Optimization, Documentation, Tools
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## Contact
+
+For questions about bioCanon which fall outside the usual Github framework please contact justin.schonfeld@canada.ca
 
 ## License
 
@@ -232,4 +279,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* James Robertson and Justin Schonfeld for their help in the development
+* Genevieve Labbe and Shannon Eagle for testing.
