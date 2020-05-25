@@ -1,0 +1,76 @@
+tree_subgroup_processing.py
+
+Required Inputs:
+	--in_vcf
+		- VCF file that contains the snp information for all samples that are to be used to generate the scheme
+	--in_nwk OR --group_info
+		- Some form of grouping information: either though a Newick tree that has all the samples in the VCF file as leaves
+			or a tsv file that indicates a samples group characteristics.
+	--reference
+		- A fasta file containing the reference  genetic sequence, this is required for the positive and negaitve tile generation
+		
+Optional Inputs:
+	--min_snps
+		- the minimum number of snps that are required for a group to be considered supported by the data in the VCF file 
+			default: 2
+	--min_members
+		- the minimum number of samples that are required to consider a group valid for inclusion in the scheme
+			default: 5
+
+Example inputs:
+
+	The vcf, fasta and newick files are all expected to be in their standard formats.  Examples will be provided for the tsv file type required for this script
+
+	The tsv file is expecteed to contain one sample per line followed by a tab separated list of all the clades to which the sample belongs.
+	The frist group in the list should be the one at the coarsest level of discrimination followed in order down to the one with the finest discriminatory power
+
+	A	1
+	B	2	2.1	2.1.1	2.1.1.1	2.1.1.1.1
+	C	2	2.1	2.1.1	2.1.1.2	2.1.1.2.1
+	D	2	2.2
+	E	2	2.1	2.1.2	2.1.2.1	2.1.1.1.2
+	F	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.2
+	G	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.2
+	H	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.2
+	I	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.2
+	J	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.1	2.1.1.1.2.1.1.1.1.2
+	K	2	2.1	2.1.2	2.1.2.2	2.1.2.2.2
+	L	2	2.1	2.1.2	2.1.2.2	2.1.2.2.2
+	M	2	2.1	2.1.2	2.1.2.2	2.1.2.2.1
+	N	2	2.1	2.1.2	2.1.2.2	2.1.2.2.1
+	O	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.1	2.1.1.1.2.1.1.1.1.1	2.1.1.1.2.1.1.1.1.1.2
+	P	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.1	2.1.1.1.2.1.1.1.1.1	2.1.1.1.2.1.1.1.1.1.2
+	Q	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.1	2.1.1.1.2.1.1.1.1.1	2.1.1.1.2.1.1.1.1.1.1
+	R	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.1	2.1.1.1.2.1.1	2.1.1.1.2.1.1.1	2.1.1.1.2.1.1.1.1	2.1.1.1.2.1.1.1.1.1	2.1.1.1.2.1.1.1.1.1.1
+	S	2	2.1	2.1.1	2.1.1.1	2.1.1.1.2	2.1.1.1.2.2
+	T	2	2.1	2.1.1	2.1.1.2	2.1.1.2.2
+	U	2	2.1	2.1.1	2.1.1.2	2.1.1.2.2
+	V	2	2.2
+
+	Note:  	Trailing tabs are permitted but interior missing data is not.  
+			To ensure high quality output all the levels of heirarchy in group information for each sample needs to be included
+			
+Algorithm general functioning:
+	The script checks for snps in the vcf file that correspond to the user supplied group information.  A snp is considered to support the group if all of the 
+	members of a group	have the same state and all of the other samples under consideration all have the other state for that snp.  Only snps that have exactly
+	two states are considered for use in the scheme.
+	
+	Snps are then filtered based on if a non-degenerate tile can be found, if there are enough snps supporting the group, and if the group is of sufficient size
+	to be valid. 
+
+Outputs:
+
+	The script outputs two different files after a successful run:  a log file and a biohansel scheme fasta file
+
+	.log file:
+		lists all the positive and  negative tiles found to be supported in the vcf file
+	
+	Format:
+		Position	groupID	positive tile
+		negativePosition	groupID	negative tile
+		
+	.fasta file:
+		>Position|code
+		positive tile
+		>negativePosition|code
+		negative tile

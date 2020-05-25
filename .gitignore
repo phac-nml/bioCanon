@@ -1,0 +1,6 @@
+# Universal ignores
+
+# Specific ignores
+bioqa_test/
+out/
+__pycache__/
