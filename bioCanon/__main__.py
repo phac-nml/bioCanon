@@ -992,8 +992,6 @@ def tile_generator(reference_fasta, vcf_file, numerical_parameters, groups, outd
     kept = n_unique[n_unique > 1].index
     rank_id = int()
     row_id = int()
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
     out_path = os.path.join(os.getcwd(), outdir)
     codes = open(os.path.join(out_path, "codes.tsv"), "w+")
     for i in range(0, len(leaves) - 1):
@@ -1135,6 +1133,10 @@ def main():
     """
     # collect relevant user input and parse it into the appropriate variables
     args = parse_args()
+
+    if not os.path.exists(args.outdir):
+        os.mkdir(args.outdir)
+        
     log_level = args.verbosity
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
