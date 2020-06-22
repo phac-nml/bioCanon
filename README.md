@@ -66,10 +66,16 @@ vcfpy reader compatible vcf file.  See vcfpy documentation for specific requirem
 ##### --in_nwk or --group_info
 * Either --in_nwk or --group_info required
 
---in_nwk requires a Newick format tree file
+--in_nwk requires a tree in the Newick format.  
+
 ```
 ((((((((((((Q,R),(O,P)),J),I),H),G),(S,F)),B),(C,(T,U))),(((M,N),(K,L)),E)),(D,V)),A);
 ```
+
+The Newick Standard automatically roots a tree.  If your tree was not rooted deliberately then your tree will be arbitrarily rooted simply by being in the Newick format.  This may result in unexpected behavior from the software.  
+
+By default a reference sequence labeled 'Reference' will be screened out of consideration for partition membership.  If your reference sequence has another name in the tree you can use the '--reference_in_tree reference_name' option allows you to specify the leaf name to screen out.  Specifying a leaf name which is not present in the tree will mean that no leaf is screened out.
+
 --group_info requires a tsv format file that contains the group information
 
 ```

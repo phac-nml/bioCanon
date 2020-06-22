@@ -49,6 +49,8 @@ def parse_args():
                               help='Output Directory to put results')
     parser_inner.add_argument('--verbosity', type=str, required=False, default="INFO",
                               help='desired messaging level: info, warning, debug')
+    parser_inner.add_argument('--reference_in_tree',type=str, required=False, default='Reference',
+                              help='Name of the reference sequence to be screened out of group membership.')
     return parser_inner.parse_args()
 
 
@@ -280,10 +282,12 @@ def parse_tree(tree_file):
     tree = Tree(tree_file)
     # Need this otherwise groups derived from the tree are inaccurate
     tree.resolve_polytomy()
+    # print("Parsing the tree")
+    # tree.write(outfile="resolved_tree.nwk")
     return tree
 
 
-def get_tree_groups(ete3_tree_obj):
+def get_tree_groups(ete3_tree_obj, reference_in_tree):
     """
         obtain the hierarchical divisions that are present in a
         given tree for later functions to assess
@@ -304,10 +308,11 @@ def get_tree_groups(ete3_tree_obj):
     # interior parental node the root of the tree is ignored in this calculation
     for node in ete3_tree_obj.iter_descendants("levelorder"):
         names = node.get_leaf_names()
-        if node.dist < 0:
-            node.dist = 0
+        # print(names)
+        if node.dist < 0: # Why is this necessary?
+            node.dist = 0 
         for sample in names:
-            if sample == "Reference":
+            if sample == reference_in_tree:
                 continue
             if sample not in memberships:
                 memberships[sample] = list()
@@ -546,13 +551,13 @@ def alt_or_ref(record, samples: list):
     return ref_group, alt_group
 
 
-def path_check(group_info, nwk_treefile):
+def path_check(group_info, nwk_treefile, reference_in_tree):
     """
     checks that the sourcing on the group information is present and clear then generates the group
     information from the provided data
     Parameters
     ----------
-    group_info, nwk_treefile: str
+    group_info, nwk_treefile, reference_in_tree: str
         one of the variables should include a file name from which the group information can be
         obtained
 
@@ -585,8 +590,9 @@ def path_check(group_info, nwk_treefile):
     if path == "tree":
         try:
             tree = parse_tree(nwk_treefile)
-            memberships = get_tree_groups(tree)
+            memberships = get_tree_groups(tree, reference_in_tree)
             for leaf in tree.traverse():
+                # print(f"name: {leaf.name}  status: {leaf.is_leaf()}")
                 if leaf.is_leaf():
                     leaves.append(leaf.name)
         except parser.newick.NewickError:
@@ -599,6 +605,7 @@ def path_check(group_info, nwk_treefile):
     if path == "groups":
         memberships = tsv_to_membership(group_info)
         leaves = list(memberships.keys())
+    # print(leaves)
     return memberships, leaves, path
 
 
@@ -661,27 +668,29 @@ def make_biohansel_codes(biohansel_codes, dropped, min_parent_size):
     """
     current_codes = dict()
     current_ids = dict()
-    for i in range(0, biohansel_codes.shape[1]):
+    # Numpy matrices are accessed by designating [row,column] [y,x]
+    for i in range(0, biohansel_codes.shape[1]): # Iterate through the columns (x-coordinate)
         used = dict()
         current_ids[i] = dict()
-        for k in range(0, biohansel_codes.shape[0]):
-            if dropped.values[k, i] not in current_ids[i].keys():
+        for k in range(0, biohansel_codes.shape[0]): # Iterate through the rows (y-coordinate)
+            if dropped.values[k, i] not in current_ids[i].keys(): #.values should be replaced with .to_numpy
                 current_ids[i][dropped.values[k, i]] = [k]
             else:
                 current_ids[i][dropped.values[k, i]].append(k)
                 # this stores both the current group ids under consideration but also a
                 # list of all the rows that have that id
-        if i == 0:
-            continue
+        # if i == 0:
+        #     continue
         for k in range(0, biohansel_codes.shape[0]):
             # if there was a non-zero value in the previous column build off of that node
             # go to every row cycle through ids,
             # skipping zero and identify which is connected to current line
             working_group = -1
             new_code = str()
-            for thing in current_ids[i].keys():
-                if k in current_ids[i][thing]:
+            for thing in current_ids[i].keys(): # for each unique id in the current column
+                if k in current_ids[i][thing]: 
                     working_group = thing
+                    break   # a row should be attached to only one group 
             # if the new group is only sample smaller than the previous group mask by copy from left
             this_group = 0
             last_group = min_parent_size
@@ -698,8 +707,15 @@ def make_biohansel_codes(biohansel_codes, dropped, min_parent_size):
                 if working_group in used.keys():
                     biohansel_codes.values[k, i] = used[working_group]
                 else:
+                    if i == 0:
+                        # print("Warning! The first supported division in the tree may not be the deepest.  Check rooting of provided tree.")
+                        for attempt in range (1, biohansel_codes.shape[0]):
+                            if attempt in current_codes.keys():
+                                continue
+                            new_code = str(attempt)
+                            break
                     # if the value in the previous row is a zero start a new clade from the root
-                    if biohansel_codes.values[k, i - 1] == 0:
+                    elif biohansel_codes.values[k, i - 1] == 0:
                         for attempt in range(1, biohansel_codes.shape[0]):
                             if attempt in current_codes.keys():
                                 continue
@@ -785,6 +801,7 @@ def tile_generator(reference_fasta, vcf_file, numerical_parameters, groups, outd
     if len(discr) != 0:
         print("Something went wrong.  The leaf names in the provided Newick file or tsv file "
               "are not the same as the ones in the VCF file")
+        # This is not an appropriate error message (setdiff1d only checks in one direction)
         print(f"The samples found in one of the files but not the other are : {discr}")
         raise SystemExit(0)
 
@@ -830,6 +847,8 @@ def tile_generator(reference_fasta, vcf_file, numerical_parameters, groups, outd
         ref_group, alt_group = alt_or_ref(record, samples)
         # if all the samples have the same snp then either the alt group or the ref group is empty
         if len(ref_group) == 0 or len(alt_group) == 0:
+            if len(alt_group) == 0:
+                print("Warning! VCF record contains no alternative variants!")
             all_same.append(record.POS)
             continue
         # generate places to put group and rank information
@@ -960,7 +979,7 @@ def tile_generator(reference_fasta, vcf_file, numerical_parameters, groups, outd
 
     n_unique = codes_start.apply(pd.Series.nunique)
     cols_to_drop = n_unique[n_unique == 1].index
-    codes_start.drop(cols_to_drop, axis=1)
+    # codes_start.drop(cols_to_drop, axis=1)
     dropped = codes_start.drop(cols_to_drop, axis=1)
 
     # make a vector with all the number of groups in each column
@@ -1086,7 +1105,7 @@ def tile_generator(reference_fasta, vcf_file, numerical_parameters, groups, outd
                     continue
                 if rank_id < first_instance[code]:
                     print("There has been an error in logic")
-                if position in printed:
+                if position in printed:   #JS - NOTE - Dangling code
                     if code == "1":
                         two_codes = 0
                     elif code == "2":
@@ -1123,7 +1142,7 @@ def main():
     log_fname = os.path.join(os.path.join(os.getcwd(), args.outdir), "bioCanon.log")
     logging.basicConfig(filename=log_fname, filemode='w',
                         format='%(name)s - %(levelname)s - %(message)s')
-    groups = path_check(args.group_info, args.in_nwk)
+    groups = path_check(args.group_info, args.in_nwk, args.reference_in_tree)
     numerical_parameters = [args.min_snps, args.min_members, args.min_parent, args.flanking]
     tile_generator(args.reference, args.in_vcf, numerical_parameters, groups, args.outdir)
 
