@@ -1,0 +1,20 @@
+Filtering due to more than allowed alt base states	chrom: 1	position: 25807	count_ref: 1335	count_alt: 5	count_missing: 0
+Filtering due to maximum missing sample count	chrom: 1	position: 33303	count_ref: 967	count_alt: 3	count_missing: 370
+Filtering due to maximum missing sample count	chrom: 1	position: 33304	count_ref: 970	count_alt: 1	count_missing: 369
+Filtering due to maximum missing sample count	chrom: 1	position: 33306	count_ref: 970	count_alt: 1	count_missing: 369
+Filtering due to maximum missing sample count	chrom: 1	position: 33307	count_ref: 968	count_alt: 1	count_missing: 371
+Filtering due to maximum missing sample count	chrom: 1	position: 33319	count_ref: 998	count_alt: 1	count_missing: 341
+Filtering due to maximum missing sample count	chrom: 1	position: 33332	count_ref: 1002	count_alt: 1	count_missing: 337
+Filtering due to maximum missing sample count	chrom: 1	position: 33368	count_ref: 1001	count_alt: 1	count_missing: 338
+Filtering due to more than allowed alt base states	chrom: 1	position: 55507	count_ref: 1336	count_alt: 4	count_missing: 0
+Filtering due to more than allowed alt base states	chrom: 1	position: 57266	count_ref: 1306	count_alt: 34	count_missing: 0
+Filtering due to more than allowed alt base states	chrom: 1	position: 57605	count_ref: 1216	count_alt: 124	count_missing: 0
+Filtering due to more than allowed alt base states	chrom: 1	position: 69332	count_ref: 1258	count_alt: 4	count_missing: 78
+Filtering due to more than allowed alt base states	chrom: 1	position: 69334	count_ref: 1259	count_alt: 4	count_missing: 77
+Filtering due to maximum missing sample count	chrom: 1	position: 69552	count_ref: 901	count_alt: 23	count_missing: 416
+Filtering due to maximum missing sample count	chrom: 1	position: 69602	count_ref: 943	count_alt: 1	count_missing: 396
+Filtering due to maximum missing sample count	chrom: 1	position: 69609	count_ref: 961	count_alt: 5	count_missing: 374
+Filtering due to maximum missing sample count	chrom: 1	position: 128283	count_ref: 953	count_alt: 1	count_missing: 386
+Filtering due to more than allowed alt base states	chrom: 1	position: 166309	count_ref: 1311	count_alt: 29	count_missing: 0
+Filtering due to more than allowed alt base states	chrom: 1	position: 203150	count_ref: 1306	count_alt: 34	count_missing: 0
+Filtering due to maximum missing sample count	chrom: 1	position: 208300	count_ref: 982	count_alt: 21	count_missing: 337
