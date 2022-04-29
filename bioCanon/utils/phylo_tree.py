@@ -172,6 +172,17 @@ def visualize_tree(ete_tree_obj,genotypes={},metadata={},cansnp_supported_nodes=
             n.add_face(face,column=1)
         n.set_style(nstyle)
 
-
-
     ete_tree_obj.show(tree_style=ts)
+
+
+def get_tree_node_distances(ete_tree_obj):
+    distances = {}
+    for node in ete_tree_obj.iter_descendants("preorder"):
+        distances[node.name] = node.dist
+    return distances
+
+def get_tree_node_bootstrap(ete_tree_obj):
+    support = {}
+    for node in ete_tree_obj.iter_descendants("preorder"):
+        support[node.name] = node.support
+    return support

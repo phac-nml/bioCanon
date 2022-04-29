@@ -90,6 +90,17 @@ def vcf_to_fasta(vcf_file, out_fasta, logging, position_filter={}, sample_filter
         logging.error("Writting sequences to {}...failed".format(out_fasta))
         return False
 
+def create_pseudoseq_from_vcf(ref_seq,vcf_file, logging):
+    pandas_vcf_obj = pandas_vcf(vcf_file)
+    samples = pandas_vcf_obj.get_sample_list()
+    position_base_calls = pandas_vcf_obj.get_baselookup()
+    for index,row in pandas_vcf_obj.df.iterrows():
+        calls = get_vcf_row_calls(row, position_base_calls, samples, logging)
+        position = list(calls.keys())[0]
+        chromosome = calls[position]['chrom']
+        bases = calls[position]['bases']
+        ref_base = calls[position]['ref_base']
+
 
 def sanitize_vcf_file(vcf_file, out_file, snp_log_file, sample_log_file, logging, min_count=1, max_missing=0.25,
                       max_alt_states=4, disruptive_threshold=1,window_size=30,max_snps=2):
@@ -138,6 +149,7 @@ def sanitize_vcf_file(vcf_file, out_file, snp_log_file, sample_log_file, logging
     snp_data = {}
     positions = []
     position_base_calls = pandas_vcf_obj.get_baselookup()
+    valid_positions = []
     for index,row in pandas_vcf_obj.df.iterrows():
         calls = get_vcf_row_calls(row, position_base_calls, samples, logging)
         count_postitions += 1
@@ -160,7 +172,6 @@ def sanitize_vcf_file(vcf_file, out_file, snp_log_file, sample_log_file, logging
 
         valid_bases = []
         for base in bases:
-
             if base == ref_base:
                 count_ref = len(bases[base])
             elif base == 'N':
@@ -177,14 +188,17 @@ def sanitize_vcf_file(vcf_file, out_file, snp_log_file, sample_log_file, logging
                 valid_bases.append(base)
 
 
-        if count_ref >= min_count and count_alt >= min_count and count_missing / num_samples <= max_missing and count_alt_bases <= max_alt_states:
+        if (count_ref >= min_count) and \
+                (count_alt >= min_count) and \
+                (count_missing / num_samples <= max_missing) and \
+                count_alt_bases <= max_alt_states:
             valid_position_count += 1
+            valid_positions.append(position)
             for base in valid_bases:
                 snp_data[chromosome][position][base] = {'samples':bases[base],'out_bases':list(set(list(bases.keys())) - set([base]))}
 
-
         else:
-            if count_ref < min_count or count_alt < min_count:
+            if count_ref < min_count and count_alt < min_count:
                 filtered_positions_count += 1
                 snp_report.write(
                     "Filtering due to minimum polymorphic sample count\tchrom: {}\tposition: {}\tcount_ref: {}\tcount_alt: {}\tcount_missing: {}\n".format(
@@ -201,6 +215,9 @@ def sanitize_vcf_file(vcf_file, out_file, snp_log_file, sample_log_file, logging
                 snp_report.write(
                     "Filtering due to more than allowed alt base states\tchrom: {}\tposition: {}\tcount_ref: {}\tcount_alt: {}\tcount_missing: {}\n".format(
                         chromosome, position, count_ref, count_alt, count_missing))
+
+    filtered_df = pandas_vcf_obj.df[pandas_vcf_obj.df['POS'].isin(valid_positions)]
+    filtered_df.to_csv(out_file,sep="\t",header=True,index=False)
 
     #for position in positions:
 
@@ -275,8 +292,6 @@ def identify_snp_positions_to_mask(positions,window_size=30,max_snps=2):
             mask += window
     return mask
 
-
-
 def get_percentile(sample_dict, key, percentile=10):
     """
     Get the perctile for a numeric list of samples
@@ -299,7 +314,6 @@ def get_percentile(sample_dict, key, percentile=10):
         return None
     return np.percentile(np.array(values), percentile)
 
-
 def identify_disruptive_sequences(ambiguous_positions, threshold):
     """
     Count the number of times a given sample introduces a missing character into a position which would be otherwise core
@@ -321,7 +335,6 @@ def identify_disruptive_sequences(ambiguous_positions, threshold):
                     disruptive_samples[sample_id] = 0
                 disruptive_samples[sample_id] += 1
     return disruptive_samples
-
 
 def write_fasta_dict(fasta_dict, out_file):
     """
@@ -349,7 +362,6 @@ def write_fasta_dict(fasta_dict, out_file):
         fasta.write(">{}\n{}\n".format(sample_id, "".join(seq)))
     fasta.close()
     return True
-
 
 class pandas_vcf:
     required_fields = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
